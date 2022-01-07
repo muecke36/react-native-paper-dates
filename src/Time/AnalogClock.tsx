@@ -11,8 +11,9 @@ import {
   clockTypes,
   getAngle,
   getHours,
-  getHourType,
+  getHourTypeFromOffset,
   getMinutes,
+  hourTypes,
   PossibleClockTypes,
 } from './timeUtils'
 import * as React from 'react'
@@ -54,7 +55,6 @@ function AnalogClock({
   const onChangeRef = useLatest(onChange)
   const minutesRef = useLatest(minutes)
   const focusedRef = useLatest(focused)
-  const is24HourRef = useLatest(is24Hour)
   const modeRef = useLatest(mode)
 
   const onPointerMove = React.useCallback(
@@ -62,20 +62,18 @@ function AnalogClock({
       let x = e.nativeEvent.locationX
       let y = e.nativeEvent.locationY
 
+      console.dir(e)
+
       let angle = getAngle(x, y, circleSize)
 
       if (focusedRef.current === clockTypes.hours) {
-        let hours24 = is24HourRef.current
-        let previousHourType = getHourType(hoursRef.current)
+        let previousHourType = getHourTypeFromOffset(x, y, circleSize)
         let pickedHours = getHours(angle, previousHourType)
 
-        let hours12AndPm = !hours24 && modeRef.current === 'PM'
-
-        // Avoiding the "24h"
-        // Should be 12h for 12 hours and PM mode
-        if ((hours12AndPm || hours24) && pickedHours + 12 < 24) {
+        if (previousHourType === hourTypes.pm) {
           pickedHours += 12
         }
+
         if (modeRef.current === 'AM' && pickedHours === 12) {
           pickedHours = 0
         }
@@ -101,7 +99,7 @@ function AnalogClock({
         }
       }
     },
-    [focusedRef, is24HourRef, hoursRef, onChangeRef, minutesRef, modeRef]
+    [focusedRef, hoursRef, onChangeRef, minutesRef, modeRef]
   )
 
   const panResponder = React.useRef(
